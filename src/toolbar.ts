@@ -2,6 +2,7 @@ export interface ToolbarControls {
   $root: JQuery;
   $checkbox: JQuery<HTMLInputElement>;
   $button: JQuery<HTMLButtonElement>;
+  $sync: JQuery<HTMLButtonElement>;
 }
 
 function waitForToolbar(): JQuery.Promise<JQuery> {
@@ -32,6 +33,7 @@ function waitForToolbar(): JQuery.Promise<JQuery> {
 export function createToolbarControls(
   onSetAuthor: () => void,
   onToggle: (enabled: boolean) => void,
+  onSync: () => void,
   checked: boolean,
 ): JQuery.Promise<ToolbarControls> {
   return waitForToolbar().then(($sections) => {
@@ -40,22 +42,44 @@ export function createToolbarControls(
       const $existingCheckbox = $existing.find<HTMLInputElement>(
         'input[type="checkbox"]',
       );
-      const $existingButton = $existing.find<HTMLButtonElement>("button");
-      if ($existingCheckbox.length && $existingButton.length) {
+      const $existingButton = $existing.find<HTMLButtonElement>(
+        "#saucership-set-author",
+      );
+      const $existingSync =
+        $existing.find<HTMLButtonElement>("#saucership-sync");
+      if (
+        $existingCheckbox.length &&
+        $existingButton.length &&
+        $existingSync.length
+      ) {
         $existingCheckbox.prop("checked", checked);
+        $existingButton.off("click").on("click", onSetAuthor);
+        $existingSync.off("click").on("click", onSync);
+        $existingCheckbox.off("change").on("change", () => {
+          onToggle($existingCheckbox.prop("checked") as boolean);
+        });
         return {
           $root: $existing,
           $checkbox: $existingCheckbox,
           $button: $existingButton,
+          $sync: $existingSync,
         };
       }
+      $existing.remove();
     }
 
     const $button = $("<button>")
-      .attr("type", "button")
+      .attr({ type: "button", id: "saucership-set-author" })
       .css("margin", "5px")
       .text("Set author")
       .on("click", onSetAuthor);
+
+    const $sync = $("<button>")
+      .attr({ type: "button", id: "saucership-sync" })
+      .css("margin", "5px")
+      .text("Sync edited text")
+      .prop("disabled", true)
+      .on("click", onSync);
 
     const $checkbox = $("<input>")
       .attr("type", "checkbox")
@@ -71,7 +95,7 @@ export function createToolbarControls(
 
     const $root = $("<span>")
       .attr("id", "saucership-controls")
-      .append($button, $label);
+      .append($button, $sync, $label);
 
     $sections.append($root);
 
@@ -79,6 +103,7 @@ export function createToolbarControls(
       $root,
       $checkbox: $checkbox as JQuery<HTMLInputElement>,
       $button: $button as JQuery<HTMLButtonElement>,
+      $sync: $sync as JQuery<HTMLButtonElement>,
     };
   });
 }
@@ -91,6 +116,16 @@ export function setControlsVisible(
     return;
   }
   controls.$root.toggle(visible);
+}
+
+export function setSyncEnabled(
+  controls: ToolbarControls | null,
+  enabled: boolean,
+): void {
+  if (!controls) {
+    return;
+  }
+  controls.$sync.prop("disabled", !enabled);
 }
 
 export function isSectionEdit(): boolean {

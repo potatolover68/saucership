@@ -1,4 +1,10 @@
 import { debugLog } from "./debug";
+import {
+  collectInsertRanges,
+  mapAuthorRanges,
+  mergeRanges,
+  rangesToTokens,
+} from "./align";
 
 export interface WhoColorToken {
   str: string;
@@ -195,4 +201,37 @@ export async function getWhoColor(): Promise<WhoColorData> {
     },
   );
   return request;
+}
+
+export const NEW_EDIT_CLASS = "saucership-new";
+
+function yieldToMain(): Promise<void> {
+  return new Promise((resolve) => {
+    const channel = new MessageChannel();
+    channel.port1.onmessage = () => {
+      resolve();
+    };
+    channel.port2.postMessage(undefined);
+  });
+}
+
+export async function projectTokens(
+  latestTokens: WhoColorToken[],
+  baselineText: string,
+  newText: string,
+  editorName: string,
+): Promise<WhoColorToken[]> {
+  const started = Date.now();
+  await yieldToMain();
+  const authored = mapAuthorRanges(latestTokens, editorName, newText);
+  await yieldToMain();
+  const inserted = collectInsertRanges(baselineText, newText);
+  const userRanges = mergeRanges([...authored, ...inserted]);
+  const result = rangesToTokens(newText, userRanges, editorName);
+  debugLog(
+    `projected ${result.length} tokens ` +
+      `(${authored.length} authored ranges, ${inserted.length} insert ranges) ` +
+      `in ${Date.now() - started}ms`,
+  );
+  return result;
 }
