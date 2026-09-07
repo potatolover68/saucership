@@ -1,7 +1,7 @@
 {
   "name": "saucership",
   "version": "0.0.0",
-  "description": "saucership (a portmanteau of source and authorship) is a userscript that highlights text written by a given username within the source.",
+  "description": "saucership (a portmanteau of source and authorship) is a userscript that highlights text written by a given username while using the source editor.",
   "author": "potatolover68 (User:MSK)",
   "private": true,
   "type": "module",
