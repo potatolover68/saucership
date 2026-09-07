@@ -15,6 +15,7 @@ import {
 } from './storage';
 import {
 	createToolbarControls,
+	isMainspace,
 	setControlsVisible,
 	shouldShowControls,
 	type ToolbarControls
@@ -60,9 +61,10 @@ async function applyHighlights(): Promise<void> {
 	const generation = ++applyGeneration;
 	const active = cm;
 
-	if ( !active || !isHighlightEnabled() ) {
+	if ( !active || !isHighlightEnabled() || !isMainspace() ) {
 		debugLog(
-			`skip apply (cm=${ !!active }, highlight_enabled=${ isHighlightEnabled() })`
+			`skip apply (cm=${ !!active }, highlight_enabled=${ isHighlightEnabled() }, ` +
+			`mainspace=${ isMainspace() })`
 		);
 		await clearHighlightRanges( active );
 		return;
@@ -201,6 +203,12 @@ function bindCodeMirrorHooks(): void {
 
 async function init(): Promise<void> {
 	if ( mw.config.get( 'wgAction' ) !== 'edit' ) {
+		return;
+	}
+	if ( !isMainspace() ) {
+		debugLog(
+			`skip init (namespace=${ String( mw.config.get( 'wgNamespaceNumber' ) ) })`
+		);
 		return;
 	}
 

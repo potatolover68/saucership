@@ -12,6 +12,7 @@ const DIFF_EQUAL = 0;
 
 function origToCurrMap( original: string, current: string ): number[] {
 	const dmp = new DiffMatchPatch();
+	// eslint-disable-next-line camelcase
 	dmp.Diff_Timeout = 0;
 	const diffs = dmp.diff_main( original, current );
 	dmp.diff_cleanupSemantic( diffs );
